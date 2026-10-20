@@ -1,13 +1,13 @@
 name: camp-watch
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch: {}
 concurrency: camp-watch
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,7 +19,12 @@ jobs:
           path: state.json
           key: state-${{ github.run_id }}
           restore-keys: state-
-      - run: python check_camp.py
+      - name: check every 1 minute (4 times per run)
+        run: |
+          for i in 1 2 3 4; do
+            python check_camp.py || echo "check failed"
+            if [ "$i" -lt 4 ]; then sleep 60; fi
+          done
         env:
           TARGETS: ${{ vars.TARGETS }}
           PLAN_FILTER: ${{ vars.PLAN_FILTER }}
